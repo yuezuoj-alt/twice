@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <link rel="stylesheet" href="css/status-bar.css" />
+  <link rel="stylesheet" href="css/bottom-nav.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>添加共享成员</title>
+  <style>
+    :root {
+      --bg-page: #f7f2ef;
+      --pink-header-from: #fd898a;
+      --pink-header-to: #fd9999;
+      --pink-accent: #ec7b75;
+      --pink-muted: #e8c0b7;
+      --pink-primary: #fd898a;
+      --nav-bg: #fee0d8;
+      --text-secondary: #464646;
+      --phone-w: 440px;
+      --phone-h: 956px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #e8e4e2;
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+      padding: 24px 12px;
+    }
+
+    .phone {
+      width: var(--phone-w);
+      height: var(--phone-h);
+      max-width: 100%;
+      max-height: calc(100vh - 48px);
+      background: var(--bg-page);
+      border-radius: 48px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.18);
+    }
+
+    .bg-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .pink-header {
+      height: 126px;
+      background: linear-gradient(180deg, var(--pink-header-from) 0%, var(--pink-header-to) 100%);
+    }
+
+    .profile-card {
+      margin: -72px 20px 0;
+      border-radius: 34px;
+      background: linear-gradient(180deg, rgba(255, 240, 235, 0.15) 49.5%, rgba(233, 221, 217, 0.3) 100%);
+      backdrop-filter: blur(32.5px);
+      border: 0.8px solid rgba(255, 255, 255, 0.6);
+      box-shadow: 0 9px 13px rgba(226, 202, 194, 0.3);
+      padding: 16px;
+    }
+
+    .profile-info {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .profile-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 42px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .profile-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .profile-text .name {
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .profile-text .address {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 16px;
+    }
+
+    .bg-sections {
+      padding: 20px 20px 0 54px;
+    }
+
+    .bg-section {
+      margin-bottom: 24px;
+    }
+
+    .bg-section-title {
+      font-size: 16px;
+      color: var(--text-secondary);
+      margin-bottom: 14px;
+    }
+
+    .bg-card {
+      background: #fff;
+      border-radius: 20px;
+      height: 40px;
+      margin-bottom: 3px;
+    }
+
+    .bg-card.tall { height: 68px; }
+
+    .bottom-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 102px;
+      background: var(--nav-bg);
+      display: flex;
+      justify-content: space-between;
+      padding: 16px 30px 34px;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 50px;
+    }
+
+    .nav-item .nav-label {
+      font-size: 10px;
+      color: var(--pink-muted);
+    }
+
+    .nav-item.active .nav-label { color: var(--pink-accent); }
+
+    .overlay-mask {
+      position: absolute;
+      inset: 0;
+      z-index: 15;
+      cursor: pointer;
+    }
+
+    .overlay-mask img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .dialog {
+      position: absolute;
+      left: 20px;
+      top: 264px;
+      width: 400px;
+      max-width: calc(100% - 40px);
+      height: 397px;
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(12.5px);
+      -webkit-backdrop-filter: blur(12.5px);
+      border-radius: 15px;
+      z-index: 30;
+      padding: 46px 24px 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .dialog-title {
+      font-size: 22px;
+      color: #000;
+      text-align: center;
+      margin-bottom: 16px;
+      line-height: 1.2;
+    }
+
+    .dialog-tag {
+      border: 0.5px solid #ccc;
+      border-radius: 3px;
+      padding: 0 12px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .dialog-tag span {
+      font-size: 10px;
+      color: #000;
+      letter-spacing: 0.35px;
+      text-transform: uppercase;
+      line-height: 20px;
+      white-space: nowrap;
+    }
+
+    .dialog-desc {
+      width: 100%;
+      font-size: 14px;
+      color: #000;
+      line-height: 20px;
+      letter-spacing: 0.35px;
+      margin-bottom: auto;
+      padding: 0 16px;
+    }
+
+    .dialog-actions {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-top: 24px;
+    }
+
+    .dialog-btn {
+      width: 100%;
+      height: 44px;
+      border-radius: 32px;
+      font-family: inherit;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      line-height: 28px;
+    }
+
+    .dialog-btn:active { opacity: 0.85; }
+
+    .dialog-btn.outline {
+      background: #fff;
+      border: 1px solid var(--pink-primary);
+      color: var(--pink-primary);
+    }
+
+    .dialog-btn.primary {
+      background: var(--pink-primary);
+      border: none;
+      color: #fff;
+    }
+
+    @media (max-width: 480px) {
+      body { padding: 0; }
+      .phone {
+        width: 100vw;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <div class="bg-layer">
+      <div class="status-bar">
+        <span class="time">9:41</span>
+        <div class="dynamic-island" aria-hidden="true"></div>
+        <div class="levels"><img src="images/Levels.png" alt="" class="levels-strip" /></div>
+      </div>
+
+      <div class="pink-header"></div>
+
+      <div class="profile-card">
+        <div class="profile-info">
+          <div class="profile-avatar">
+            
+          </div>
+          <div class="profile-text">
+            <p class="name">妈妈小丽</p>
+            <p class="address">翻斗大街翻斗花园二号楼1001室</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-sections">
+        <div class="bg-section">
+          <p class="bg-section-title">孩子信息</p>
+          <div class="bg-card"></div>
+          <div class="bg-card"></div>
+          <div class="bg-card"></div>
+        </div>
+        <div class="bg-section">
+          <p class="bg-section-title">诊所</p>
+          <div class="bg-card tall"></div>
+          <div class="bg-card"></div>
+        </div>
+        <div class="bg-section">
+          <p class="bg-section-title">共享</p>
+          <div class="bg-card"></div>
+          <div class="bg-card"></div>
+          <div class="bg-card"></div>
+        </div>
+      </div>
+    </div>
+
+        <nav class="bottom-nav" aria-hidden="true">
+      <div class="nav-item" data-nav="appointment"><span class="nav-icon"><img src="" alt="" /></span><span class="nav-label">预约</span></div>
+      <div class="nav-item" data-nav="schedule"><span class="nav-icon"><img src="" alt="" /></span><span class="nav-label">接种时间表</span></div>
+      <div class="nav-item" data-nav="growth"><span class="nav-icon"><img src="" alt="" /></span><span class="nav-label">成长曲线</span></div>
+      <div class="nav-item active" data-nav="profile"><span class="nav-icon"><img src="" alt="" /></span><span class="nav-label">我的</span></div>
+    </nav>
+
+    <div class="overlay-mask" id="overlay" aria-hidden="true">
+      
+    </div>
+
+    <div class="dialog" role="dialog" aria-labelledby="dialogTitle">
+      <h2 class="dialog-title" id="dialogTitle">添加共享成员</h2>
+      <div class="dialog-tag">
+        <span>添加其他成员共享孩子的疫苗信息</span>
+      </div>
+      <p class="dialog-desc">
+        新成员登录后可同步已有的孩子信息、疫苗预约、预约通知、疫苗记录与成长记录；<br /><br />
+        任意一位共享成员新增或修改的孩子信息、预约计划与成长记录会同步到其他共享成员的APP
+      </p>
+      <div class="dialog-actions">
+        <button class="dialog-btn outline" type="button" id="copyLinkBtn">复制链接</button>
+        <button class="dialog-btn primary" type="button" id="shareWechatBtn">分享到微信</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/system-time.js"></script>
+  <script>
+    const SHARE_LINK = "https://vaccine.app/invite/abc123";
+
+    function goProfile() {
+      window.location.href = "我的.html";
+    }
+
+    document.getElementById("overlay").addEventListener("click", goProfile);
+
+    document.getElementById("copyLinkBtn").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(SHARE_LINK);
+        alert("链接已复制");
+      } catch {
+        prompt("复制以下链接", SHARE_LINK);
+      }
+    });
+
+    document.getElementById("shareWechatBtn").addEventListener("click", () => {
+      alert("分享到微信");
+    });
+  </script>
+  <script src="js/bottom-nav.js"></script>
+</body>
+</html>

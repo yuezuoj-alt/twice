@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <link rel="stylesheet" href="css/status-bar.css" />
+  <link rel="stylesheet" href="css/bottom-nav.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>接种预定时间</title>
+  <style>
+    :root {
+      --bg-page: #f7f2ef;
+      --header-gradient: linear-gradient(180deg, #fd898a 0%, #fd9999 100%);
+      --pink-accent: #ec7b75;
+      --pink-primary: #fd898a;
+      --nav-bg: #fee0d8;
+      --text-secondary: #464646;
+      --text-muted: #808080;
+      --date-disabled: #ceccd1;
+      --btn-cancel-bg: #c5c5c5;
+      --btn-next-bg: #fd898a;
+      --progress-line: #d9d9d9;
+      --phone-w: 440px;
+      --phone-h: 956px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #e8e4e2;
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+      padding: 24px 12px;
+    }
+
+    .phone {
+      width: var(--phone-w);
+      height: var(--phone-h);
+      max-width: 100%;
+      max-height: calc(100vh - 48px);
+      background: var(--bg-page);
+      border-radius: 48px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.18);
+    }
+
+    .header-gradient {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 173px;
+      background: var(--header-gradient);
+      z-index: 0;
+    }
+
+    .header-dim {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 173px;
+      background: rgba(0, 0, 0, 0.22);
+      z-index: 3;
+      pointer-events: none;
+    }
+    .profile-row {
+      position: relative;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      min-height: 72px;
+    }
+
+    .profile-info {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .avatar-small {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid #d89698;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .avatar-small img { width: 100%; height: 100%; object-fit: cover; }
+
+    .profile-pill {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 40px;
+      padding: 2px 14px 2px 2px;
+    }
+
+    .profile-pill .pill-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+    }
+
+    .profile-pill .avatar-large {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      overflow: hidden;
+      position: relative;
+      z-index: 1;
+    }
+
+    .profile-pill .avatar-large img { width: 100%; height: 100%; object-fit: cover; }
+
+    .profile-pill .text-wrap {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      font-size: 14px;
+    }
+
+    .profile-pill .name { font-weight: 600; }
+    .profile-pill .birth { font-size: 12px; }
+
+    .calendar-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.75);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .content-overlay {
+      position: absolute;
+      top: 173px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.3);
+      z-index: 10;
+    }
+
+    .modal-stack {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      top: 264px;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(12.5px);
+      -webkit-backdrop-filter: blur(12.5px);
+      border-radius: 15px;
+      overflow: hidden;
+    }
+
+    .card-progress {
+      padding: 19px 20px 16px;
+      text-align: center;
+    }
+
+    .modal-title {
+      font-size: 16px;
+      color: #000;
+      margin-bottom: 14px;
+    }
+
+    .modal-vaccine-info {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      display: none;
+    }
+
+    .modal-vaccine-info.visible { display: block; }
+
+    .progress-bar {
+      position: relative;
+      height: 7px;
+      margin: 0 10px;
+    }
+
+    .progress-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 2px;
+      height: 3px;
+      background: var(--progress-line);
+      border-radius: 2px;
+    }
+
+    .progress-dots {
+      position: relative;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 26px;
+    }
+
+    .progress-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #d9d9d9;
+      position: relative;
+      z-index: 1;
+    }
+
+    .progress-dot.active {
+      background: var(--pink-primary);
+    }
+
+    .card-calendar {
+      padding: 20px 20px 24px;
+    }
+
+    .month-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      margin-bottom: 16px;
+    }
+
+    .month-nav button {
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+
+    .month-nav button img {
+      width: 7px;
+      height: 13px;
+    }
+
+    .month-label {
+      font-size: 16px;
+      color: var(--text-muted);
+      min-width: 120px;
+      text-align: center;
+    }
+
+    .weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      margin-bottom: 8px;
+    }
+
+    .weekdays span {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 22px;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      border-top: 0.5px solid #d3d3d3;
+    }
+
+    .calendar-grid .day-cell {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 500;
+      color: #000;
+      border-bottom: 0.5px solid #d3d3d3;
+      position: relative;
+    }
+
+    .calendar-grid .day-cell.empty {
+      border-bottom: 0.5px solid #d3d3d3;
+    }
+
+    .calendar-grid .day-cell.disabled {
+      color: var(--date-disabled);
+      cursor: not-allowed;
+    }
+
+    .calendar-grid .day-cell.selectable {
+      cursor: pointer;
+    }
+
+    .calendar-grid .day-cell.selectable:hover {
+      opacity: 0.75;
+    }
+
+    .calendar-grid .day-cell.selected {
+      color: #fff;
+    }
+
+    .calendar-grid .day-cell.selected .day-inner {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-footer {
+      display: flex;
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .modal-footer button {
+      flex: 1;
+      height: 40px;
+      border: none;
+      border-radius: 38.5px;
+      font-size: 16px;
+      font-family: inherit;
+      cursor: pointer;
+      color: var(--text-secondary);
+    }
+
+    .btn-cancel { background: var(--btn-cancel-bg); }
+    .btn-next { background: var(--btn-next-bg); }
+
+    .btn-cancel:active,
+    .btn-next:active { opacity: 0.88; }
+
+    .bottom-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 102px;
+      background: var(--nav-bg);
+      backdrop-filter: blur(11.45px);
+      display: flex;
+      justify-content: space-between;
+      padding: 16px 30px 34px;
+      z-index: 4;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 50px;
+      border: none;
+      background: none;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .nav-item .nav-icon {
+      width: 29px;
+      height: 29px;
+      margin-bottom: 4px;
+    }
+
+        .nav-item .nav-label {
+      font-size: 10px;
+      color: #979797;
+    }
+
+    .nav-item.active .nav-label {
+      color: var(--pink-accent);
+    }
+
+    @media (max-width: 480px) {
+      body { padding: 0; }
+      .phone {
+        width: 100vw;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+        box-shadow: none;
+      }
+    }
+  </style>
+  <script src="js/load-baby-profile-css.js"></script>
+</head>
+<body>
+  <div class="phone">
+    <div class="header-gradient"></div>
+    <div class="header-dim"></div>
+
+    <div class="status-bar">
+      <span class="time">9:41</span>
+      <div class="dynamic-island" aria-hidden="true"></div>
+      <div class="levels"><img src="images/Levels.png" alt="" class="levels-strip" /></div>
+    </div>
+
+    <div class="profile-row">
+      <div class="profile-info">
+        <div class="avatar-small">
+          
+        </div>
+        <div class="profile-pill">
+          
+          <div class="avatar-large">
+            <img src="images/avatar-xia.png" alt="" />
+          </div>
+          <div class="text-wrap">
+            <span class="name">皮皮虾</span>
+            <span class="birth">2026年4月8号出生</span>
+          </div>
+        </div>
+      </div>
+      <button class="calendar-btn" type="button" aria-label="日历"><img src="images/日历.png" alt="" /></button>
+    </div>
+
+    <div class="content-overlay" id="overlay"></div>
+
+    <div class="modal-stack" role="dialog" aria-labelledby="modalTitle">
+      <div class="card card-progress">
+        <h2 class="modal-title" id="modalTitle">接种预定时间</h2>
+        <p class="modal-vaccine-info" id="vaccineInfo"></p>
+        <div class="progress-bar">
+          <div class="progress-line"></div>
+          <div class="progress-dots">
+            <span class="progress-dot active"></span>
+            <span class="progress-dot"></span>
+            <span class="progress-dot"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-calendar">
+        <div class="month-nav">
+          <button type="button" id="prevMonth" aria-label="上个月">
+            
+          </button>
+          <span class="month-label" id="monthLabel">2026 年 5 月</span>
+          <button type="button" id="nextMonth" aria-label="下个月">
+            
+          </button>
+        </div>
+        <div class="weekdays">
+          <span>周日</span><span>周一</span><span>周二</span><span>周三</span>
+          <span>周四</span><span>周五</span><span>周六</span>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+        <div class="modal-footer">
+          <button class="btn-cancel" type="button" id="btnCancel">取消</button>
+          <button class="btn-next" type="button" id="btnNext">下一步</button>
+        </div>
+      </div>
+    </div>
+
+        <nav class="bottom-nav" aria-label="主导航">
+      <button class="nav-item active" data-nav="appointment" type="button"><span class="nav-icon"><img src="" alt="" /></span><span class="nav-label">预约</span></button>
+      <button class="nav-item" data-nav="schedule" type="button"><span class="nav-icon"><img src="" alt="" /></span><span class="nav-label">接种时间表</span></button>
+      <button class="nav-item" data-nav="growth" type="button"><span class="nav-icon"><img src="" alt="" /></span><span class="nav-label">成长曲线</span></button>
+      <button class="nav-item" data-nav="profile" type="button"><span class="nav-icon"><img src="" alt="" /></span><span class="nav-label">我的</span></button>
+    </nav>
+  </div>
+
+  <script src="js/system-time.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const vaccineName = params.get("vaccine") || "乙肝疫苗";
+    const doseInfo = params.get("dose") || "";
+
+    const TODAY = new Date(2026, 4, 17);
+    let viewYear = 2026;
+    let viewMonth = 4;
+    let selectedDate = new Date(2026, 4, 17);
+
+    const vaccineInfoEl = document.getElementById("vaccineInfo");
+    if (doseInfo) {
+      vaccineInfoEl.textContent = `${vaccineName} · ${doseInfo}`;
+      vaccineInfoEl.classList.add("visible");
+    }
+
+    function formatMonthLabel(year, month) {
+      return `${year} 年 ${month + 1} 月`;
+    }
+
+    function isSameDay(a, b) {
+      return a.getFullYear() === b.getFullYear() &&
+        a.getMonth() === b.getMonth() &&
+        a.getDate() === b.getDate();
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById("calendarGrid");
+      document.getElementById("monthLabel").textContent = formatMonthLabel(viewYear, viewMonth);
+
+      const firstDay = new Date(viewYear, viewMonth, 1);
+      const startWeekday = firstDay.getDay();
+      const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+      grid.innerHTML = "";
+
+      for (let i = 0; i < startWeekday; i++) {
+        const empty = document.createElement("div");
+        empty.className = "day-cell empty";
+        grid.appendChild(empty);
+      }
+
+      const todayStart = new Date(TODAY);
+      todayStart.setHours(0, 0, 0, 0);
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const cell = document.createElement("div");
+        const date = new Date(viewYear, viewMonth, day);
+        const cellDate = new Date(date);
+        cellDate.setHours(0, 0, 0, 0);
+
+        cell.className = "day-cell";
+
+        if (cellDate < todayStart) {
+          cell.classList.add("disabled");
+        } else {
+          cell.classList.add("selectable");
+          if (isSameDay(date, selectedDate)) {
+            cell.classList.add("selected");
+          }
+          cell.addEventListener("click", () => {
+            selectedDate = new Date(viewYear, viewMonth, day);
+            renderCalendar();
+          });
+        }
+
+        if (cell.classList.contains("selected")) {
+          const inner = document.createElement("span");
+          inner.className = "day-inner";
+          inner.textContent = day;
+          cell.appendChild(inner);
+        } else {
+          cell.textContent = day;
+        }
+
+        grid.appendChild(cell);
+      }
+    }
+
+    function goHome() {
+      window.location.href = "index.html";
+    }
+
+    document.getElementById("prevMonth").addEventListener("click", () => {
+      viewMonth -= 1;
+      if (viewMonth < 0) {
+        viewMonth = 11;
+        viewYear -= 1;
+      }
+      renderCalendar();
+    });
+
+    document.getElementById("nextMonth").addEventListener("click", () => {
+      viewMonth += 1;
+      if (viewMonth > 11) {
+        viewMonth = 0;
+        viewYear += 1;
+      }
+      renderCalendar();
+    });
+
+    document.getElementById("btnCancel").addEventListener("click", goHome);
+    document.getElementById("overlay").addEventListener("click", goHome);
+
+    document.getElementById("btnNext").addEventListener("click", () => {
+      const y = selectedDate.getFullYear();
+      const m = String(selectedDate.getMonth() + 1).padStart(2, "0");
+      const d = String(selectedDate.getDate()).padStart(2, "0");
+      const date = `${y}-${m}-${d}`;
+      const nextParams = new URLSearchParams({
+        vaccine: vaccineName,
+        dose: doseInfo,
+        date
+      });
+      window.location.href = `疫苗预约门诊.html?${nextParams.toString()}`;
+    });
+
+    renderCalendar();
+  </script>
+  <script src="js/bottom-nav.js"></script>
+</body>
+</html>

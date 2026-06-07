@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <link rel="stylesheet" href="css/status-bar.css" />
+  <link rel="stylesheet" href="css/bottom-nav.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>修改计划</title>
+  <style>
+    :root {
+      --bg-page: #f9f4f2;
+      --bg-header-gradient: linear-gradient(180deg, #f8c4bc 0%, #f5b8b0 55%, #f9f4f2 100%);
+      --pink-primary: #d89698;
+      --pink-accent: #ec7b75;
+      --pink-muted: #e8c0b7;
+      --nav-bg: #fee0d8;
+      --text-secondary: #464646;
+      --btn-cancel: #c5c5c5;
+      --btn-confirm: #fd898a;
+      --shadow-card: 0 9px 13px rgba(226, 202, 194, 0.3);
+      --radius-large: 34px;
+      --phone-w: 440px;
+      --phone-h: 956px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #e8e4e2;
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+      padding: 24px 12px;
+    }
+
+    .phone {
+      width: var(--phone-w);
+      height: var(--phone-h);
+      max-width: 100%;
+      max-height: calc(100vh - 48px);
+      background: var(--bg-page);
+      border-radius: 48px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.18);
+    }
+
+    .bg-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .header-wrap {
+      position: relative;
+      height: 208px;
+      background: var(--bg-header-gradient);
+      z-index: 2;
+    }
+
+    .profile-row {
+      position: relative;
+      z-index: 4;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+    }
+
+    .profile-info {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .avatar-small {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid var(--pink-primary);
+      overflow: hidden;
+    }
+
+    .avatar-small img { width: 100%; height: 100%; object-fit: cover; }
+
+    .profile-pill {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 40px;
+      padding: 2px 14px 2px 2px;
+    }
+
+    .profile-pill .pill-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+    }
+
+    .profile-pill .avatar-large {
+      position: relative;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      overflow: hidden;
+    }
+
+    .profile-pill .avatar-large img { width: 100%; height: 100%; object-fit: cover; }
+
+    .profile-pill .text-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      font-size: 14px;
+    }
+
+    .profile-pill .name { font-weight: 600; }
+    .profile-pill .birth { font-size: 12px; }
+
+    .calendar-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.75);
+    }
+
+    .next-card-wrap {
+      position: relative;
+      padding: 0 20px;
+      margin-top: 8px;
+      z-index: 5;
+    }
+
+    .next-card {
+      position: relative;
+      width: 100%;
+      max-width: 400px;
+      margin: 0 auto;
+      padding: 56px 10px 12px;
+    }
+
+    .next-card .card-bg {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 165px;
+      border-radius: var(--radius-large);
+      background: linear-gradient(180deg, rgba(255, 240, 235, 0.15) 49.5%, rgba(233, 221, 217, 0.3) 100%);
+      backdrop-filter: blur(32.5px);
+      -webkit-backdrop-filter: blur(32.5px);
+      box-shadow: var(--shadow-card);
+      border: 0.8px solid rgba(255, 255, 255, 0.6);
+    }
+
+    .next-card .card-title {
+      position: absolute;
+      left: 32px;
+      top: 26px;
+      font-size: 16px;
+      color: #000;
+      z-index: 2;
+    }
+
+    .next-card .card-inner {
+      position: relative;
+      z-index: 2;
+      width: 376px;
+      max-width: calc(100% - 4px);
+      margin: 0 auto;
+      height: 96px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 21px 18px;
+    }
+
+    .next-card .inner-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+      border-radius: 22px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .next-info {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .next-info .accent-line {
+      width: 2px;
+      height: 52px;
+      background: var(--text-secondary);
+      border-radius: 5px;
+      flex-shrink: 0;
+    }
+
+    .next-info .date-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .next-info .date {
+      font-size: 22px;
+      font-weight: 800;
+      color: #000;
+    }
+
+    .next-info .weekday {
+      font-size: 14px;
+      color: #000;
+    }
+
+    .next-info .vaccine-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .next-info .vaccine-name {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .tag-free {
+      font-size: 10px;
+      color: var(--text-secondary);
+      border: 0.5px solid var(--text-secondary);
+      border-radius: 3px;
+      padding: 0 4px;
+      height: 14px;
+      line-height: 14px;
+    }
+
+    .btn-edit {
+      position: relative;
+      z-index: 1;
+      width: 102px;
+      height: 42px;
+      background: var(--text-secondary);
+      border: none;
+      border-radius: 23px;
+      color: #fff;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    .bg-list {
+      padding: 16px 20px 0 54px;
+    }
+
+    .bg-card {
+      background: #fff;
+      border-radius: 20px;
+      height: 118px;
+      margin-bottom: 16px;
+    }
+
+    .bottom-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 102px;
+      background: var(--nav-bg);
+      display: flex;
+      justify-content: space-between;
+      padding: 16px 30px 34px;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 50px;
+    }
+
+    .nav-item .nav-label {
+      font-size: 10px;
+      color: var(--pink-muted);
+    }
+
+    .nav-item.active .nav-label { color: var(--pink-accent); }
+
+    .overlay-mask {
+      position: absolute;
+      inset: 0;
+      z-index: 15;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+
+    .overlay-mask img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .edit-sheet {
+      position: absolute;
+      left: 20px;
+      top: 278px;
+      width: 400px;
+      max-width: calc(100% - 40px);
+      height: 397px;
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(12.5px);
+      -webkit-backdrop-filter: blur(12.5px);
+      border-radius: 15px;
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sheet-rows {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sheet-row {
+      display: flex;
+      align-items: center;
+      padding: 0 10px 0 30px;
+      min-height: 48px;
+      border: none;
+      background: none;
+      width: 100%;
+      font-family: inherit;
+      text-align: left;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .sheet-row:active { background: rgba(0, 0, 0, 0.03); }
+
+    .sheet-row::after {
+      content: "";
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      bottom: 0;
+      height: 0.5px;
+      background: #d3d3d3;
+    }
+
+    .sheet-row:last-child::after { display: none; }
+
+    .sheet-row.profile-row-inner {
+      min-height: 60px;
+      padding-top: 8px;
+      padding-bottom: 8px;
+    }
+
+    .sheet-row .row-avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+      margin-right: 17px;
+    }
+
+    .sheet-row .row-profile-text {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .sheet-row .row-profile-text .name {
+      font-size: 16px;
+      font-weight: 600;
+      color: #000;
+      line-height: 1.3;
+    }
+
+    .sheet-row .row-profile-text .birth {
+      font-size: 14px;
+      color: #000;
+      margin-top: 4px;
+    }
+
+    .sheet-row .row-label {
+      font-size: 16px;
+      color: #000;
+      width: 82px;
+      flex-shrink: 0;
+    }
+
+    .sheet-row .row-value {
+      flex: 1;
+      font-size: 14px;
+      color: #000;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .sheet-row .chevron {
+      width: 7px;
+      height: 13px;
+      flex-shrink: 0;
+      margin-left: 8px;
+      margin-right: 10px;
+    }
+
+    .sheet-actions {
+      display: flex;
+      gap: 20px;
+      padding: 20px 22px 28px;
+      justify-content: center;
+    }
+
+    .sheet-btn {
+      width: 170px;
+      height: 40px;
+      border: none;
+      border-radius: 38.5px;
+      font-family: inherit;
+      font-size: 16px;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .sheet-btn:active { opacity: 0.85; }
+
+    .sheet-btn.delete { background: var(--btn-cancel); }
+    .sheet-btn.complete { background: var(--btn-confirm); }
+
+    @media (max-width: 480px) {
+      body { padding: 0; }
+      .phone {
+        width: 100vw;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+        box-shadow: none;
+      }
+    }
+  </style>
+  <script src="js/load-baby-profile-css.js"></script>
+</head>
+<body>
+  <div class="phone">
+    <div class="bg-layer">
+      <div class="status-bar">
+        <span class="time">9:41</span>
+        <div class="dynamic-island" aria-hidden="true"></div>
+        <div class="levels"><img src="images/Levels.png" alt="" class="levels-strip" /></div>
+      </div>
+
+      <div class="header-wrap">
+        <div class="profile-row">
+          <div class="profile-info">
+            <div class="avatar-small">
+              <img src="images/avatar-xia.png" alt="" />
+            </div>
+            <div class="profile-pill">
+              
+              <div class="avatar-large">
+                <img src="images/avatar-xia.png" alt="" />
+              </div>
+              <div class="text-wrap">
+                <span class="name">皮皮虾</span>
+                <span class="birth">2026年4月8号出生</span>
+              </div>
+            </div>
+          </div>
+          <button class="calendar-btn" type="button" aria-label="日历"><img src="images/日历.png" alt="" /></button>
+        </div>
+
+        <div class="next-card-wrap">
+          <div class="next-card">
+            <div class="card-bg"></div>
+            <p class="card-title">下一针预约时间</p>
+            <div class="card-inner">
+              <img class="inner-bg" src="images/next-card-inner.svg" alt="" aria-hidden="true" />
+              <div class="next-info">
+                <div class="accent-line"></div>
+                <div>
+                  <div class="date-row">
+                    <span class="date">2026-04-08</span>
+                    <span class="weekday">周三</span>
+                  </div>
+                  <div class="vaccine-row">
+                    <span class="vaccine-name">五联疫苗 第2剂</span>
+                    <span class="tag-free">免费</span>
+                  </div>
+                </div>
+              </div>
+              <button class="btn-edit" type="button" disabled>修改计划</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-list">
+        <div class="bg-card"></div>
+        <div class="bg-card"></div>
+        <div class="bg-card"></div>
+      </div>
+    </div>
+
+        <nav class="bottom-nav" aria-hidden="true">
+      <div class="nav-item active" data-nav="appointment"><span class="nav-icon"><img src="" alt="" /></span><span class="nav-label">预约</span></div>
+      <div class="nav-item" data-nav="schedule"><span class="nav-icon"><img src="" alt="" /></span><span class="nav-label">接种时间表</span></div>
+      <div class="nav-item" data-nav="growth"><span class="nav-icon"><img src="" alt="" /></span><span class="nav-label">成长曲线</span></div>
+      <div class="nav-item" data-nav="profile"><span class="nav-icon"><img src="" alt="" /></span><span class="nav-label">我的</span></div>
+    </nav>
+
+    <div class="overlay-mask" id="overlay" aria-hidden="true">
+      
+    </div>
+
+    <div class="edit-sheet" role="dialog" aria-labelledby="sheetTitle">
+      <h2 id="sheetTitle" class="visually-hidden">修改计划</h2>
+      <div class="sheet-rows">
+        <button class="sheet-row profile-row-inner" type="button" id="profileRow">
+          <img class="row-avatar" src="images/avatar-xia.png" alt="" />
+          <div class="row-profile-text">
+            <div class="name">皮皮虾</div>
+            <div class="birth">2026年4月8号出生</div>
+          </div>
+          <img class="chevron" src="images/后一个.png" alt="" />
+        </button>
+
+        <button class="sheet-row" type="button" id="vaccineRow">
+          <span class="row-label">接种疫苗</span>
+          <span class="row-value" id="vaccineValue">脊髓灰质炎疫苗</span>
+          <img class="chevron" src="images/后一个.png" alt="" />
+        </button>
+
+        <button class="sheet-row" type="button" id="timeRow">
+          <span class="row-label">接种时间</span>
+          <span class="row-value" id="timeValue">2026.05.08</span>
+          <img class="chevron" src="images/后一个.png" alt="" />
+        </button>
+
+        <button class="sheet-row" type="button" id="clinicRow">
+          <span class="row-label">接种门诊</span>
+          <span class="row-value" id="clinicValue">红凌路预防接种站</span>
+          <img class="chevron" src="images/后一个.png" alt="" />
+        </button>
+
+        <button class="sheet-row" type="button" id="noteRow">
+          <span class="row-label">添加备注</span>
+          <span class="row-value" id="noteValue">带一条防风外套</span>
+          <img class="chevron" src="images/后一个.png" alt="" />
+        </button>
+      </div>
+
+      <div class="sheet-actions">
+        <button class="sheet-btn delete" type="button" id="deleteBtn">删除</button>
+        <button class="sheet-btn complete" type="button" id="completeBtn">完成</button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+  </style>
+
+  <script src="js/system-time.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const vaccine = params.get("vaccine") || "脊髓灰质炎疫苗";
+    const dose = params.get("dose") || "3";
+    const date = params.get("date") || "2026.05.08";
+    const clinic = params.get("clinic") || "红凌路预防接种站";
+    const note = params.get("note") || "带一条防风外套";
+
+    document.getElementById("vaccineValue").textContent = vaccine;
+    document.getElementById("timeValue").textContent = date;
+    document.getElementById("clinicValue").textContent = clinic;
+    document.getElementById("noteValue").textContent = note;
+
+    function goHome() {
+      window.location.href = "index.html";
+    }
+
+    document.getElementById("overlay").addEventListener("click", goHome);
+    document.getElementById("completeBtn").addEventListener("click", goHome);
+    document.getElementById("deleteBtn").addEventListener("click", goHome);
+
+    document.getElementById("timeRow").addEventListener("click", () => {
+      const q = new URLSearchParams({ vaccine, dose, date: date.replace(/\./g, "-") });
+      window.location.href = `疫苗预约时间.html?${q.toString()}`;
+    });
+
+    document.getElementById("clinicRow").addEventListener("click", () => {
+      const q = new URLSearchParams({ vaccine, dose, date: date.replace(/\./g, "-") });
+      window.location.href = `疫苗预约门诊.html?${q.toString()}`;
+    });
+
+    document.getElementById("vaccineRow").addEventListener("click", () => {
+      alert("选择疫苗");
+    });
+
+    document.getElementById("profileRow").addEventListener("click", () => {
+      alert("切换宝宝");
+    });
+
+    document.getElementById("noteRow").addEventListener("click", () => {
+      const next = prompt("添加备注", note);
+      if (next !== null) {
+        document.getElementById("noteValue").textContent = next;
+      }
+    });
+  </script>
+  <script src="js/bottom-nav.js"></script>
+</body>
+</html>

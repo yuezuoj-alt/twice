@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <link rel="stylesheet" href="css/status-bar.css" />
+  <link rel="stylesheet" href="css/bottom-nav.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>移除疫苗确认</title>
+  <style>
+    :root {
+      --bg-page: #f9f4f2;
+      --bg-header-gradient: linear-gradient(180deg, #f8c4bc 0%, #f5b8b0 55%, #f9f4f2 100%);
+      --pink-primary: #d89698;
+      --pink-accent: #ec7b75;
+      --pink-muted: #e8c0b7;
+      --nav-bg: #fee0d8;
+      --text-secondary: #464646;
+      --btn-cancel: #c5c5c5;
+      --btn-confirm: #fd898a;
+      --phone-w: 440px;
+      --phone-h: 956px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #e8e4e2;
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+      padding: 24px 12px;
+    }
+
+    .phone {
+      width: var(--phone-w);
+      height: var(--phone-h);
+      max-width: 100%;
+      max-height: calc(100vh - 48px);
+      background: var(--bg-page);
+      border-radius: 48px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.18);
+    }
+
+    .bg-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .header-wrap {
+      position: relative;
+      height: 173px;
+      background: var(--bg-header-gradient);
+      z-index: 2;
+    }
+
+    .header-dim {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.2);
+      z-index: 3;
+    }
+
+    .profile-row {
+      position: relative;
+      z-index: 4;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+    }
+
+    .profile-info {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .avatar-small {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid var(--pink-primary);
+      overflow: hidden;
+    }
+
+    .avatar-small img { width: 100%; height: 100%; object-fit: cover; }
+
+    .profile-pill {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 40px;
+      padding: 2px 14px 2px 2px;
+    }
+
+    .profile-pill .pill-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+    }
+
+    .profile-pill .avatar-large {
+      position: relative;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      overflow: hidden;
+    }
+
+    .profile-pill .avatar-large img { width: 100%; height: 100%; object-fit: cover; }
+
+    .profile-pill .text-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      font-size: 14px;
+    }
+
+    .profile-pill .name { font-weight: 600; }
+    .profile-pill .birth { font-size: 12px; }
+
+    .calendar-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.75);
+    }
+
+    .bg-list {
+      padding: 16px 20px 0 54px;
+    }
+
+    .bg-card {
+      background: #fff;
+      border-radius: 20px;
+      height: 118px;
+      margin-bottom: 16px;
+    }
+
+    .bottom-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 102px;
+      background: var(--nav-bg);
+      display: flex;
+      justify-content: space-between;
+      padding: 16px 30px 34px;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 50px;
+    }
+
+    .nav-item .nav-label {
+      font-size: 10px;
+      color: var(--pink-muted);
+    }
+
+    .nav-item.active .nav-label { color: var(--pink-accent); }
+
+    .body-overlay {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 173px;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.35);
+      z-index: 15;
+    }
+
+    .dialog {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 400px;
+      max-width: calc(100% - 40px);
+      min-height: 257px;
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(12.5px);
+      -webkit-backdrop-filter: blur(12.5px);
+      border-radius: 15px;
+      z-index: 30;
+      padding: 56px 26px 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .dialog-title {
+      font-size: 18px;
+      color: #000;
+      text-align: center;
+      line-height: 1.4;
+      margin-bottom: 20px;
+    }
+
+    .dialog-desc {
+      font-size: 16px;
+      color: var(--text-secondary);
+      text-align: center;
+      line-height: 25px;
+      max-width: 347px;
+      margin-bottom: 48px;
+    }
+
+    .dialog-actions {
+      display: flex;
+      gap: 20px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .dialog-btn {
+      width: 170px;
+      height: 40px;
+      border: none;
+      border-radius: 38.5px;
+      font-family: inherit;
+      font-size: 16px;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .dialog-btn:active { opacity: 0.85; }
+
+    .dialog-btn.cancel {
+      background: var(--btn-cancel);
+    }
+
+    .dialog-btn.confirm {
+      background: var(--btn-confirm);
+    }
+
+    @media (max-width: 480px) {
+      body { padding: 0; }
+      .phone {
+        width: 100vw;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+        box-shadow: none;
+      }
+    }
+  </style>
+  <script src="js/load-baby-profile-css.js"></script>
+</head>
+<body>
+  <div class="phone">
+    <div class="bg-layer">
+      <div class="status-bar">
+        <span class="time">9:41</span>
+        <div class="dynamic-island" aria-hidden="true"></div>
+        <div class="levels"><img src="images/Levels.png" alt="" class="levels-strip" /></div>
+      </div>
+      <div class="header-wrap">
+        <div class="header-dim"></div>
+        <div class="profile-row">
+          <div class="profile-info">
+            <div class="avatar-small">
+              <img src="images/avatar-xia.png" alt="" />
+            </div>
+            <div class="profile-pill">
+              
+              <div class="avatar-large">
+                <img src="images/avatar-xia.png" alt="" />
+              </div>
+              <div class="text-wrap">
+                <span class="name">皮皮虾</span>
+                <span class="birth">2026年4月8号出生</span>
+              </div>
+            </div>
+          </div>
+          <button class="calendar-btn" type="button" aria-label="日历"><img src="images/日历.png" alt="" /></button>
+        </div>
+      </div>
+      <div class="bg-list">
+        <div class="bg-card"></div>
+        <div class="bg-card"></div>
+        <div class="bg-card"></div>
+      </div>
+    </div>
+
+        <nav class="bottom-nav" aria-hidden="true">
+      <div class="nav-item active" data-nav="appointment"><span class="nav-icon"><img src="" alt="" /></span><span class="nav-label">预约</span></div>
+      <div class="nav-item" data-nav="schedule"><span class="nav-icon"><img src="" alt="" /></span><span class="nav-label">接种时间表</span></div>
+      <div class="nav-item" data-nav="growth"><span class="nav-icon"><img src="" alt="" /></span><span class="nav-label">成长曲线</span></div>
+      <div class="nav-item" data-nav="profile"><span class="nav-icon"><img src="" alt="" /></span><span class="nav-label">我的</span></div>
+    </nav>
+
+    <div class="body-overlay" id="overlay"></div>
+
+    <div class="dialog" role="dialog" aria-labelledby="dialogTitle">
+      <h2 class="dialog-title" id="dialogTitle">确定将该剂次疫苗从列表中移除吗？</h2>
+      <p class="dialog-desc">移除后，疫苗会在疫苗页面中隐藏不做显示，后续如需恢复，可前往添加疫苗页面中操作添加显示；</p>
+      <div class="dialog-actions">
+        <button class="dialog-btn cancel" type="button" id="cancelBtn">取消</button>
+        <button class="dialog-btn confirm" type="button" id="confirmBtn">确认</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/system-time.js"></script>
+  <script src="js/baby-profile.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const vaccineName = params.get("vaccine") || "";
+
+    function goHome(extra) {
+      const url = extra ? `index.html?${extra}` : "index.html";
+      window.location.href = url;
+    }
+
+    document.getElementById("cancelBtn").addEventListener("click", () => goHome());
+    document.getElementById("overlay").addEventListener("click", () => goHome());
+
+    document.getElementById("confirmBtn").addEventListener("click", () => {
+      if (vaccineName) {
+        const hidden = BabyProfile.getHiddenVaccines();
+        if (!hidden.includes(vaccineName)) {
+          hidden.push(vaccineName);
+          BabyProfile.setHiddenVaccines(hidden);
+        }
+        goHome(`hidden=${encodeURIComponent(vaccineName)}`);
+      } else {
+        goHome();
+      }
+    });
+  </script>
+  <script src="js/bottom-nav.js"></script>
+</body>
+</html>

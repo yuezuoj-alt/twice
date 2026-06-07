@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <link rel="stylesheet" href="css/status-bar.css" />
+  <link rel="stylesheet" href="css/bottom-nav.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>提醒时间</title>
+  <style>
+    :root {
+      --bg-page: #f7f2ef;
+      --pink-header-from: #fd898a;
+      --pink-header-to: #fd9999;
+      --pink-accent: #ec7b75;
+      --pink-muted: #e8c0b7;
+      --pink-primary: #fd898a;
+      --nav-bg: #fee0d8;
+      --text-secondary: #464646;
+      --picker-muted: #ccc;
+      --picker-active: #464646;
+      --phone-w: 440px;
+      --phone-h: 956px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #e8e4e2;
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+      padding: 24px 12px;
+    }
+
+    .phone {
+      width: var(--phone-w);
+      height: var(--phone-h);
+      max-width: 100%;
+      max-height: calc(100vh - 48px);
+      background: var(--bg-page);
+      border-radius: 48px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.18);
+    }
+
+    .bg-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .pink-header {
+      height: 126px;
+      background: linear-gradient(180deg, var(--pink-header-from) 0%, var(--pink-header-to) 100%);
+    }
+
+    .profile-card {
+      margin: -72px 20px 0;
+      border-radius: 34px;
+      background: linear-gradient(180deg, rgba(255, 240, 235, 0.15) 49.5%, rgba(233, 221, 217, 0.3) 100%);
+      backdrop-filter: blur(32.5px);
+      border: 0.8px solid rgba(255, 255, 255, 0.6);
+      box-shadow: 0 9px 13px rgba(226, 202, 194, 0.3);
+      padding: 16px;
+    }
+
+    .profile-info {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .profile-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 42px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .profile-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .profile-text .name {
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .profile-text .address {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 16px;
+    }
+
+    .bg-sections {
+      padding: 20px 20px 0 54px;
+    }
+
+    .bg-section {
+      margin-bottom: 24px;
+    }
+
+    .bg-section-title {
+      font-size: 16px;
+      color: var(--text-secondary);
+      margin-bottom: 14px;
+    }
+
+    .bg-card {
+      background: #fff;
+      border-radius: 20px;
+      height: 40px;
+      margin-bottom: 3px;
+    }
+
+    .bottom-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 102px;
+      background: var(--nav-bg);
+      display: flex;
+      justify-content: space-between;
+      padding: 16px 30px 34px;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 50px;
+    }
+
+    .nav-item .nav-label {
+      font-size: 10px;
+      color: var(--pink-muted);
+    }
+
+    .nav-item.active .nav-label { color: var(--pink-accent); }
+
+    .overlay-mask {
+      position: absolute;
+      inset: 0;
+      z-index: 15;
+      cursor: pointer;
+    }
+
+    .overlay-mask img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .dialog {
+      position: absolute;
+      left: 20px;
+      top: 265px;
+      width: 400px;
+      max-width: calc(100% - 40px);
+      height: 397px;
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(12.5px);
+      -webkit-backdrop-filter: blur(12.5px);
+      border-radius: 15px;
+      z-index: 30;
+      padding: 45px 20px 32px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .dialog-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 28px;
+      position: relative;
+    }
+
+    .dialog-title {
+      font-size: 22px;
+      color: #000;
+      font-weight: 400;
+      line-height: 1.2;
+    }
+
+    .time-badge {
+      border: 0.5px solid #ccc;
+      border-radius: 3px;
+      padding: 0 8px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .time-badge span {
+      font-size: 10px;
+      color: #000;
+      letter-spacing: 0.35px;
+      white-space: nowrap;
+      line-height: 20px;
+    }
+
+    .wheel-wrap {
+      position: relative;
+      overflow: hidden;
+      touch-action: pan-y;
+      height: 126px;
+      flex: 1;
+    }
+
+    .wheel-wrap::before,
+    .wheel-wrap::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 42px;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .wheel-wrap::before {
+      top: 0;
+      background: linear-gradient(180deg, #fff 50%, transparent);
+    }
+
+    .wheel-wrap::after {
+      bottom: 0;
+      background: linear-gradient(0deg, #fff 50%, transparent);
+    }
+
+    .wheel-highlight {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 42px;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .wheel-highlight::before,
+    .wheel-highlight::after {
+      content: "";
+      position: absolute;
+      height: 1px;
+      background: #ccc;
+    }
+
+    .wheel-highlight::before { top: 0; left: 64px; right: 64px; }
+    .wheel-highlight::after { bottom: 0; left: 64px; right: 64px; }
+
+    .time-picker {
+      display: flex;
+      height: 100%;
+      padding: 0 20px;
+      align-items: stretch;
+    }
+
+    .picker-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .picker-col.period { flex: 0 0 86px; }
+
+    .col-unit {
+      font-size: 10px;
+      color: #000;
+      letter-spacing: 0.35px;
+      height: 20px;
+      line-height: 20px;
+      margin-bottom: 2px;
+      flex-shrink: 0;
+    }
+
+    .picker-col.period .col-unit { visibility: hidden; }
+
+    .wheel-col {
+      width: 100%;
+      flex: 1;
+      overflow-y: auto;
+      scroll-snap-type: y mandatory;
+      scroll-behavior: smooth;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .wheel-col::-webkit-scrollbar { display: none; }
+
+    .wheel-item {
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      scroll-snap-align: center;
+      scroll-snap-stop: always;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--picker-muted);
+      user-select: none;
+    }
+
+    .wheel-item.active {
+      font-size: 28px;
+      color: var(--picker-active);
+    }
+
+    .dialog-actions {
+      display: flex;
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .dialog-btn {
+      flex: 1;
+      height: 44px;
+      border: none;
+      border-radius: 32px;
+      font-family: inherit;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      line-height: 28px;
+    }
+
+    .dialog-btn:active { opacity: 0.85; }
+
+    .dialog-btn.cancel {
+      background: #d9d9d9;
+      color: #000;
+    }
+
+    .dialog-btn.confirm {
+      background: var(--pink-primary);
+      color: #fff;
+    }
+
+    @media (max-width: 480px) {
+      body { padding: 0; }
+      .phone {
+        width: 100vw;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <div class="bg-layer">
+      <div class="status-bar">
+        <span class="time">9:41</span>
+        <div class="dynamic-island" aria-hidden="true"></div>
+        <div class="levels"><img src="images/Levels.png" alt="" class="levels-strip" /></div>
+      </div>
+
+      <div class="pink-header"></div>
+
+      <div class="profile-card">
+        <div class="profile-info">
+          <div class="profile-avatar">
+            
+          </div>
+          <div class="profile-text">
+            <p class="name">妈妈小丽</p>
+            <p class="address">翻斗大街翻斗花园二号楼1001室</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-sections">
+        <div class="bg-section">
+          <p class="bg-section-title">提醒</p>
+          <div class="bg-card"></div>
+          <div class="bg-card"></div>
+          <div class="bg-card"></div>
+          <div class="bg-card"></div>
+          <div class="bg-card"></div>
+          <div class="bg-card"></div>
+        </div>
+      </div>
+    </div>
+
+        <nav class="bottom-nav" aria-hidden="true">
+      <div class="nav-item" data-nav="appointment"><span class="nav-icon"><img src="" alt="" /></span><span class="nav-label">预约</span></div>
+      <div class="nav-item" data-nav="schedule"><span class="nav-icon"><img src="" alt="" /></span><span class="nav-label">接种时间表</span></div>
+      <div class="nav-item" data-nav="growth"><span class="nav-icon"><img src="" alt="" /></span><span class="nav-label">成长曲线</span></div>
+      <div class="nav-item active" data-nav="profile"><span class="nav-icon"><img src="" alt="" /></span><span class="nav-label">我的</span></div>
+    </nav>
+
+    <div class="overlay-mask" id="overlay" aria-hidden="true">
+      
+    </div>
+
+    <div class="dialog" role="dialog" aria-labelledby="dialogTitle">
+      <div class="dialog-header">
+        <h2 class="dialog-title" id="dialogTitle">提醒时间</h2>
+        <div class="time-badge">
+          <span id="previewTime">上午 08:00</span>
+        </div>
+      </div>
+
+      <div class="wheel-wrap">
+        <div class="wheel-highlight"></div>
+        <div class="time-picker">
+          <div class="picker-col period">
+            <span class="col-unit">时段</span>
+            <div class="wheel-col" id="periodCol"></div>
+          </div>
+          <div class="picker-col">
+            <span class="col-unit">时</span>
+            <div class="wheel-col" id="hourCol"></div>
+          </div>
+          <div class="picker-col">
+            <span class="col-unit">分</span>
+            <div class="wheel-col" id="minuteCol"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dialog-actions">
+        <button class="dialog-btn cancel" type="button" id="cancelBtn">取消</button>
+        <button class="dialog-btn confirm" type="button" id="confirmBtn">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/system-time.js"></script>
+  <script>
+    const ITEM_H = 42;
+    const PERIODS = ["上午", "下午"];
+    const HOURS = Array.from({ length: 12 }, (_, i) => i + 1);
+    const MINUTES = Array.from({ length: 60 }, (_, i) => i);
+
+    function loadReminderTime() {
+      const stored = sessionStorage.getItem("reminderTime");
+      if (stored) return JSON.parse(stored);
+      return { period: "上午", hour: 8, minute: 0 };
+    }
+
+    function pad2(n) {
+      return String(n).padStart(2, "0");
+    }
+
+    function formatDisplay(time) {
+      return `${time.period} ${pad2(time.hour)}:${pad2(time.minute)}`;
+    }
+
+    function formatDisplayCompact(time) {
+      return `${time.period}${pad2(time.hour)}:${pad2(time.minute)}`;
+    }
+
+    class VerticalWheel {
+      constructor(col, options) {
+        this.col = col;
+        this.itemHeight = options.itemHeight || ITEM_H;
+        this.items = options.items;
+        this.defaultIndex = options.defaultIndex || 0;
+        this.formatActive = options.formatActive || ((v) => String(v));
+        this.formatItem = options.formatItem || ((v) => String(v));
+        this.onChange = options.onChange || (() => {});
+        this.scrollTimer = null;
+        this.build();
+        this.bind();
+        requestAnimationFrame(() => {
+          this.scrollToIndex(this.defaultIndex, false);
+          this.updateActive();
+        });
+      }
+
+      build() {
+        const pad = this.getPadding();
+        this.col.style.paddingTop = pad + "px";
+        this.col.style.paddingBottom = pad + "px";
+        this.col.innerHTML = "";
+        this.items.forEach((val, i) => {
+          const el = document.createElement("div");
+          el.className = "wheel-item";
+          el.textContent = this.formatItem(val, i);
+          this.col.appendChild(el);
+        });
+      }
+
+      getPadding() {
+        const visible = this.col.clientHeight || 84;
+        return Math.max(0, (visible - this.itemHeight) / 2);
+      }
+
+      getIndex() {
+        const idx = Math.round(this.col.scrollTop / this.itemHeight);
+        return Math.max(0, Math.min(this.items.length - 1, idx));
+      }
+
+      getValue() {
+        return this.items[this.getIndex()];
+      }
+
+      scrollToIndex(index, smooth = true) {
+        this.col.style.scrollBehavior = smooth ? "smooth" : "auto";
+        this.col.scrollTop = index * this.itemHeight;
+        if (!smooth) this.col.style.scrollBehavior = "smooth";
+      }
+
+      updateActive() {
+        const idx = this.getIndex();
+        this.col.querySelectorAll(".wheel-item").forEach((el, i) => {
+          const active = i === idx;
+          el.classList.toggle("active", active);
+          el.textContent = active
+            ? this.formatActive(this.items[i], i)
+            : this.formatItem(this.items[i], i);
+        });
+        this.onChange(this.items[idx], idx);
+      }
+
+      snap() {
+        this.scrollToIndex(this.getIndex());
+        setTimeout(() => this.updateActive(), 100);
+      }
+
+      bind() {
+        this.col.addEventListener("scroll", () => {
+          clearTimeout(this.scrollTimer);
+          this.updateActive();
+          this.scrollTimer = setTimeout(() => this.snap(), 80);
+        });
+
+        this.col.addEventListener("wheel", (e) => {
+          e.preventDefault();
+          this.col.scrollTop += e.deltaY;
+        }, { passive: false });
+
+        this.col.addEventListener("touchend", () => {
+          setTimeout(() => this.snap(), 50);
+        });
+      }
+    }
+
+    const initial = loadReminderTime();
+    let currentTime = { ...initial };
+
+    const previewEl = document.getElementById("previewTime");
+
+    function updatePreview() {
+      previewEl.textContent = formatDisplay(currentTime);
+    }
+
+    const periodWheel = new VerticalWheel(document.getElementById("periodCol"), {
+      items: PERIODS,
+      defaultIndex: PERIODS.indexOf(initial.period),
+      onChange: (val) => {
+        currentTime.period = val;
+        updatePreview();
+      }
+    });
+
+    const hourWheel = new VerticalWheel(document.getElementById("hourCol"), {
+      items: HOURS,
+      defaultIndex: HOURS.indexOf(initial.hour),
+      formatItem: (v) => pad2(v),
+      formatActive: (v) => pad2(v),
+      onChange: (val) => {
+        currentTime.hour = val;
+        updatePreview();
+      }
+    });
+
+    const minuteWheel = new VerticalWheel(document.getElementById("minuteCol"), {
+      items: MINUTES,
+      defaultIndex: initial.minute,
+      formatItem: (v) => pad2(v),
+      formatActive: (v) => pad2(v),
+      onChange: (val) => {
+        currentTime.minute = val;
+        updatePreview();
+      }
+    });
+
+    updatePreview();
+
+    function goProfile() {
+      window.location.href = "我的.html";
+    }
+
+    document.getElementById("overlay").addEventListener("click", goProfile);
+    document.getElementById("cancelBtn").addEventListener("click", goProfile);
+
+    document.getElementById("confirmBtn").addEventListener("click", () => {
+      sessionStorage.setItem("reminderTime", JSON.stringify({
+        period: periodWheel.getValue(),
+        hour: hourWheel.getValue(),
+        minute: minuteWheel.getValue()
+      }));
+      window.location.href = "我的.html";
+    });
+  </script>
+  <script src="js/bottom-nav.js"></script>
+</body>
+</html>

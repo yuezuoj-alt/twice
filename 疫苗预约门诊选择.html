@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <link rel="stylesheet" href="css/status-bar.css" />
+  <link rel="stylesheet" href="css/bottom-nav.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>选择接种门诊</title>
+  <style>
+    :root {
+      --bg-page: #f7f2ef;
+      --header-gradient: linear-gradient(180deg, #fd898a 0%, #fd9999 100%);
+      --pink-accent: #ec7b75;
+      --pink-primary: #fd898a;
+      --pink-progress: #f1a7a8;
+      --nav-bg: #fee0d8;
+      --text-secondary: #464646;
+      --text-muted: #808080;
+      --btn-add-bg: #c5c5c5;
+      --progress-line: #d9d9d9;
+      --divider: #d3d3d3;
+      --phone-w: 440px;
+      --phone-h: 956px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #e8e4e2;
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+      padding: 24px 12px;
+    }
+
+    .phone {
+      width: var(--phone-w);
+      height: var(--phone-h);
+      max-width: 100%;
+      max-height: calc(100vh - 48px);
+      background: var(--bg-page);
+      border-radius: 48px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.18);
+    }
+
+    .header-gradient {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 173px;
+      background: var(--header-gradient);
+      z-index: 0;
+    }
+
+    .header-dim {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 173px;
+      background: rgba(0, 0, 0, 0.22);
+      z-index: 3;
+      pointer-events: none;
+    }
+    .profile-row {
+      position: relative;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      min-height: 72px;
+    }
+
+    .profile-info {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .avatar-small {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid #d89698;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .avatar-small img { width: 100%; height: 100%; object-fit: cover; }
+
+    .profile-pill {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 40px;
+      padding: 2px 14px 2px 2px;
+    }
+
+    .profile-pill .pill-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+    }
+
+    .profile-pill .avatar-large {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      overflow: hidden;
+      position: relative;
+      z-index: 1;
+    }
+
+    .profile-pill .avatar-large img { width: 100%; height: 100%; object-fit: cover; }
+
+    .profile-pill .text-wrap {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      font-size: 14px;
+    }
+
+    .profile-pill .name { font-weight: 600; }
+    .profile-pill .birth { font-size: 12px; }
+
+    .calendar-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.75);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .bg-vaccine-list {
+      position: absolute;
+      top: 134px;
+      left: 0;
+      right: 0;
+      bottom: 102px;
+      padding: 20px 20px 0;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    .bg-card {
+      background: #fff;
+      border-radius: 20px;
+      min-height: 118px;
+      margin-bottom: 14px;
+      padding: 12px 14px;
+      opacity: 0.95;
+    }
+
+    .bg-card .title {
+      font-size: 18px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    .bg-card .placeholder {
+      height: 48px;
+      background: #f5f5f5;
+      border-radius: 24px;
+      width: 48px;
+      display: inline-block;
+      margin-right: 12px;
+    }
+
+    .content-overlay {
+      position: absolute;
+      top: 173px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.3);
+      z-index: 10;
+    }
+
+    .modal-stack {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      top: 264px;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(12.5px);
+      -webkit-backdrop-filter: blur(12.5px);
+      border-radius: 15px;
+      overflow: hidden;
+    }
+
+    .card-progress {
+      padding: 19px 20px 16px;
+      text-align: center;
+    }
+
+    .modal-title {
+      font-size: 16px;
+      color: #000;
+      margin-bottom: 14px;
+    }
+
+    .progress-bar {
+      position: relative;
+      height: 7px;
+      margin: 0 10px;
+    }
+
+    .progress-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 2px;
+      height: 3px;
+      background: var(--progress-line);
+      border-radius: 2px;
+    }
+
+    .progress-line-fill {
+      position: absolute;
+      left: 0;
+      top: 2px;
+      height: 3px;
+      width: 50%;
+      background: var(--pink-progress);
+      border-radius: 2px;
+      z-index: 1;
+    }
+
+    .progress-dots {
+      position: relative;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 26px;
+    }
+
+    .progress-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #d9d9d9;
+      position: relative;
+      z-index: 2;
+    }
+
+    .progress-dot.active { background: var(--pink-primary); }
+
+    .card-select {
+      padding: 0 0 24px;
+      min-height: 397px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .select-toolbar {
+      padding: 20px 20px 12px;
+    }
+
+    .btn-back {
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: none;
+      padding: 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-back img {
+      width: 7px;
+      height: 13px;
+      transform: rotate(180deg);
+    }
+
+    .clinic-list {
+      flex: 1;
+    }
+
+    .clinic-option {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 18px 20px 18px 16px;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .clinic-option:active { opacity: 0.85; }
+
+    .radio-wrap {
+      width: 23px;
+      height: 23px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      border: 2px solid #ccc;
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    .clinic-option.selected .radio-wrap {
+      border-color: #ec7b75;
+    }
+
+    .clinic-option.selected .radio-wrap::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 11px;
+      height: 11px;
+      margin: -5.5px 0 0 -5.5px;
+      border-radius: 50%;
+      background: #ec7b75;
+    }
+
+    .clinic-name {
+      flex: 1;
+      font-size: 16px;
+      color: #000;
+      line-height: 1.4;
+    }
+
+    .clinic-divider {
+      height: 1px;
+      background: var(--divider);
+      margin: 0 20px;
+    }
+
+    .btn-add-clinic {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin: 16px 20px 0;
+      height: 40px;
+      border: none;
+      border-radius: 38.5px;
+      background: var(--btn-add-bg);
+      font-family: inherit;
+      font-size: 16px;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .btn-add-clinic:active { opacity: 0.88; }
+
+    .btn-add-clinic .plus-icon {
+      width: 21px;
+      height: 21px;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .btn-add-clinic .plus-icon img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .btn-add-clinic .plus-icon .plus-mark {
+      width: 11px;
+      height: 11px;
+      left: 5px;
+      top: 5px;
+    }
+
+    .bottom-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 102px;
+      background: var(--nav-bg);
+      backdrop-filter: blur(11.45px);
+      display: flex;
+      justify-content: space-between;
+      padding: 16px 30px 34px;
+      z-index: 4;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 50px;
+      border: none;
+      background: none;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .nav-item .nav-icon {
+      width: 29px;
+      height: 29px;
+      margin-bottom: 4px;
+    }
+
+        .nav-item .nav-label {
+      font-size: 10px;
+      color: #979797;
+    }
+
+    .nav-item.active .nav-label { color: var(--pink-accent); }
+
+    @media (max-width: 480px) {
+      body { padding: 0; }
+      .phone {
+        width: 100vw;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+        box-shadow: none;
+      }
+    }
+  </style>
+  <script src="js/load-baby-profile-css.js"></script>
+</head>
+<body>
+  <div class="phone">
+    <div class="header-gradient"></div>
+    <div class="header-dim"></div>
+
+    <div class="status-bar">
+      <span class="time">9:41</span>
+      <div class="dynamic-island" aria-hidden="true"></div>
+      <div class="levels"><img src="images/Levels.png" alt="" class="levels-strip" /></div>
+    </div>
+
+    <div class="profile-row">
+      <div class="profile-info">
+        <div class="avatar-small">
+          
+        </div>
+        <div class="profile-pill">
+          
+          <div class="avatar-large">
+            
+          </div>
+          <div class="text-wrap">
+            <span class="name">皮皮虾</span>
+            <span class="birth">2026年4月8号出生</span>
+          </div>
+        </div>
+      </div>
+      <button class="calendar-btn" type="button" aria-label="日历"><img src="images/日历.png" alt="" /></button>
+    </div>
+
+    <div class="bg-vaccine-list" aria-hidden="true">
+      <div class="bg-card"><div class="title">乙肝疫苗</div><span class="placeholder"></span><span class="placeholder"></span></div>
+      <div class="bg-card"><div class="title">百白破疫苗</div><span class="placeholder"></span><span class="placeholder"></span></div>
+    </div>
+
+    <div class="content-overlay" id="overlay"></div>
+
+    <div class="modal-stack" role="dialog" aria-labelledby="modalTitle">
+      <div class="card card-progress">
+        <h2 class="modal-title" id="modalTitle">接种门诊</h2>
+        <div class="progress-bar">
+          <div class="progress-line"></div>
+          <div class="progress-line-fill"></div>
+          <div class="progress-dots">
+            <span class="progress-dot active"></span>
+            <span class="progress-dot active"></span>
+            <span class="progress-dot"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-select">
+        <div class="select-toolbar">
+          <button class="btn-back" type="button" id="btnBack" aria-label="返回">
+            <img src="images/前一个.png" alt="" />
+          </button>
+        </div>
+
+        <div class="clinic-list" id="clinicList">
+          <button class="clinic-option selected" type="button" data-clinic="红凌路预防接种站">
+            <span class="radio-wrap"></span>
+            <span class="clinic-name">红凌路预防接种站</span>
+          </button>
+          <div class="clinic-divider"></div>
+          <button class="clinic-option" type="button" data-clinic="中山区桃源街道社区卫生服务中心">
+            <span class="radio-wrap"></span>
+            <span class="clinic-name">中山区桃源街道社区卫生服务中心</span>
+          </button>
+          <div class="clinic-divider"></div>
+          <button class="clinic-option" type="button" data-clinic="南山街预防接种门诊">
+            <span class="radio-wrap"></span>
+            <span class="clinic-name">南山街预防接种门诊</span>
+          </button>
+        </div>
+
+        <button class="btn-add-clinic" type="button" id="btnAddClinic">
+          <span class="plus-icon"><img src="images/加号.png" alt="" /></span>
+          新增接种门诊地址
+        </button>
+      </div>
+    </div>
+
+        <nav class="bottom-nav" aria-label="主导航">
+      <button class="nav-item active" data-nav="appointment" type="button"><span class="nav-icon"><img src="" alt="" /></span><span class="nav-label">预约</span></button>
+      <button class="nav-item" data-nav="schedule" type="button"><span class="nav-icon"><img src="" alt="" /></span><span class="nav-label">接种时间表</span></button>
+      <button class="nav-item" data-nav="growth" type="button"><span class="nav-icon"><img src="" alt="" /></span><span class="nav-label">成长曲线</span></button>
+      <button class="nav-item" data-nav="profile" type="button"><span class="nav-icon"><img src="" alt="" /></span><span class="nav-label">我的</span></button>
+    </nav>
+  </div>
+
+  <script src="js/system-time.js"></script>
+  <script>
+
+    const params = new URLSearchParams(window.location.search);
+    const vaccineName = params.get("vaccine") || "乙肝疫苗";
+    const doseInfo = params.get("dose") || "";
+    const dateInfo = params.get("date") || "";
+    let selectedClinic = params.get("clinic") || "红凌路预防接种站";
+
+    function buildParams(extra = {}) {
+      return new URLSearchParams({
+        vaccine: vaccineName,
+        dose: doseInfo,
+        date: dateInfo,
+        clinic: selectedClinic,
+        ...extra
+      });
+    }
+
+    function goBack() {
+      window.location.href = `疫苗预约门诊.html?${buildParams().toString()}`;
+    }
+
+    function goHome() {
+      window.location.href = "index.html";
+    }
+
+    function updateSelection(name) {
+      selectedClinic = name;
+      document.querySelectorAll(".clinic-option").forEach((opt) => {
+        const isSelected = opt.dataset.clinic === name;
+        opt.classList.toggle("selected", isSelected);
+      });
+    }
+
+    function bindClinicOption(opt) {
+      opt.addEventListener("click", () => {
+        updateSelection(opt.dataset.clinic);
+        setTimeout(goBack, 200);
+      });
+    }
+
+    function appendClinicOption(name) {
+      const list = document.getElementById("clinicList");
+      const existing = [...list.querySelectorAll(".clinic-option")].some(
+        (opt) => opt.dataset.clinic === name
+      );
+      if (existing) return;
+
+      const divider = document.createElement("div");
+      divider.className = "clinic-divider";
+
+      const btn = document.createElement("button");
+      btn.className = "clinic-option";
+      btn.type = "button";
+      btn.dataset.clinic = name;
+      btn.innerHTML = `
+        <span class="radio-wrap"></span>
+        <span class="clinic-name">${name}</span>
+      `;
+
+      list.appendChild(divider);
+      list.appendChild(btn);
+      bindClinicOption(btn);
+    }
+
+    document.querySelectorAll(".clinic-option").forEach(bindClinicOption);
+
+    JSON.parse(sessionStorage.getItem("extraClinics") || "[]").forEach(appendClinicOption);
+    if (selectedClinic) appendClinicOption(selectedClinic);
+
+    if (selectedClinic) updateSelection(selectedClinic);
+
+    document.getElementById("btnBack").addEventListener("click", goBack);
+    document.getElementById("overlay").addEventListener("click", goHome);
+    document.getElementById("btnAddClinic").addEventListener("click", () => {
+      window.location.href = `接种单位.html?${buildParams().toString()}`;
+    });
+  </script>
+  <script src="js/bottom-nav.js"></script>
+</body>
+</html>
